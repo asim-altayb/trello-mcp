@@ -21,7 +21,7 @@ async function main(): Promise<void> {
 
   const server = new McpServer({
     name: "trello-mcp",
-    version: "0.5.0",
+    version: "1.0.0",
   });
 
   registerTools(server, app);

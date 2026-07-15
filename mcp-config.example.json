@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "trello-mcp": {
+      "command": "node",
+      "args": ["/absolute/path/to/trello-mcp/dist/index.js"],
+      "cwd": "/absolute/path/to/your/project"
+    }
+  }
+}

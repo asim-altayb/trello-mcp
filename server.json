@@ -1,0 +1,38 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/mcp-server.schema.json",
+  "name": "io.github.asim-altayb/trello-mcp",
+  "description": "Trello MCP server with per-project board profiles, aliases, and local-only credentials.",
+  "version": "1.0.0",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/asim-altayb/trello-mcp"
+  },
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "trello-mcp",
+      "version": "1.0.0",
+      "transport": {
+        "type": "stdio"
+      },
+      "environmentVariables": [
+        {
+          "name": "TRELLO_API_KEY",
+          "description": "Your Trello API key",
+          "required": true
+        },
+        {
+          "name": "TRELLO_TOKEN",
+          "description": "Your Trello API token",
+          "required": true
+        },
+        {
+          "name": "TRELLO_PROJECT_ROOT",
+          "description": "Optional project root when MCP client cwd is unreliable",
+          "required": false
+        }
+      ]
+    }
+  ]
+}

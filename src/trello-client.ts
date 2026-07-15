@@ -144,6 +144,14 @@ export class TrelloClient {
     });
   }
 
+  getMyCards() {
+    return this.request<Record<string, unknown>[]>("/members/me/cards", {
+      query: {
+        fields: "name,desc,due,dueComplete,idBoard,idList,url,shortUrl,labels,dateLastActivity",
+      },
+    });
+  }
+
   getBoard(boardId: string) {
     this.ensureBoardAllowed(boardId);
     return this.request<Record<string, unknown>>(`/boards/${boardId}`, {
@@ -161,6 +169,16 @@ export class TrelloClient {
     this.ensureBoardAllowed(boardId);
     return this.request<Record<string, unknown>[]>(`/boards/${boardId}/lists`, {
       query: { filter: "open", fields: "name,pos,closed" },
+    });
+  }
+
+  getRecentActivity(boardId: string, limit = 10) {
+    this.ensureBoardAllowed(boardId);
+    return this.request<Record<string, unknown>[]>(`/boards/${boardId}/actions`, {
+      query: {
+        limit,
+        fields: "date,type,data,memberCreator",
+      },
     });
   }
 
@@ -182,6 +200,15 @@ export class TrelloClient {
         checkItems: "all",
         members: "true",
         attachments: "true",
+      },
+    });
+  }
+
+  getCardComments(cardId: string, limit = 50) {
+    return this.request<Record<string, unknown>[]>(`/cards/${cardId}/actions`, {
+      query: {
+        filter: "commentCard",
+        limit,
       },
     });
   }
@@ -228,6 +255,82 @@ export class TrelloClient {
         ...input,
         idLabels: input.idLabels?.join(","),
       },
+    });
+  }
+
+  moveCard(cardId: string, listId: string) {
+    return this.updateCard(cardId, { idList: listId });
+  }
+
+  archiveCard(cardId: string) {
+    return this.updateCard(cardId, { closed: true });
+  }
+
+  addList(boardId: string, name: string) {
+    this.ensureBoardAllowed(boardId);
+    return this.request<Record<string, unknown>>("/lists", {
+      method: "POST",
+      query: { name, idBoard: boardId, pos: "bottom" },
+    });
+  }
+
+  addChecklist(cardId: string, name: string) {
+    return this.request<Record<string, unknown>>(`/cards/${cardId}/checklists`, {
+      method: "POST",
+      query: { name },
+    });
+  }
+
+  addChecklistItem(cardId: string, checklistId: string, text: string) {
+    return this.request<Record<string, unknown>>(
+      `/cards/${cardId}/checklist/${checklistId}/checkItem`,
+      {
+        method: "POST",
+        query: { name: text, pos: "bottom" },
+      },
+    );
+  }
+
+  updateChecklistItem(
+    cardId: string,
+    checkItemId: string,
+    input: {
+      name?: string;
+      state?: "complete" | "incomplete";
+    },
+  ) {
+    return this.request<Record<string, unknown>>(
+      `/cards/${cardId}/checkItem/${checkItemId}`,
+      {
+        method: "PUT",
+        query: input,
+      },
+    );
+  }
+
+  deleteChecklistItem(cardId: string, checkItemId: string) {
+    return this.request<void>(`/cards/${cardId}/checkItem/${checkItemId}`, {
+      method: "DELETE",
+    });
+  }
+
+  addComment(cardId: string, text: string) {
+    return this.request<Record<string, unknown>>(`/cards/${cardId}/actions/comments`, {
+      method: "POST",
+      query: { text },
+    });
+  }
+
+  updateComment(commentId: string, text: string) {
+    return this.request<Record<string, unknown>>(`/actions/${commentId}`, {
+      method: "PUT",
+      query: { text },
+    });
+  }
+
+  deleteComment(commentId: string) {
+    return this.request<void>(`/actions/${commentId}`, {
+      method: "DELETE",
     });
   }
 

@@ -142,6 +142,27 @@ export function registerTools(server: McpServer, app: AppContext): void {
     },
   );
 
+  server.tool(
+    "trello_get_recent_activity",
+    "Fetch recent activity on a board.",
+    {
+      board: boardRefSchema,
+      limit: z.number().int().min(1).max(50).optional(),
+    },
+    async ({ board, limit }) => {
+      const { boardId, usedDefault } = resolveBoardInput(policy, board);
+      ensureBoardAllowed(policy, boardId);
+      const activity = await trello.getRecentActivity(boardId, limit ?? 10);
+      return {
+        content: [
+          {
+            type: "text",
+            text: formatResult({ usedDefaultBoard: usedDefault, boardId, activity }),
+          },
+        ],
+      };
+    },
+  );
 
   server.tool(
     "trello_get_cards_in_list",
@@ -229,16 +250,147 @@ export function registerTools(server: McpServer, app: AppContext): void {
     }),
   );
 
+  server.tool(
+    "trello_move_card",
+    "Move a card to another list.",
+    {
+      cardId: z.string(),
+      listId: z.string(),
+    },
+    async ({ cardId, listId }) => ({
+      content: [{ type: "text", text: formatResult(await trello.moveCard(cardId, listId)) }],
+    }),
+  );
 
+  server.tool(
+    "trello_archive_card",
+    "Archive a card.",
+    { cardId: z.string() },
+    async ({ cardId }) => ({
+      content: [{ type: "text", text: formatResult(await trello.archiveCard(cardId)) }],
+    }),
+  );
 
+  server.tool(
+    "trello_add_list",
+    "Add a new list to a board.",
+    {
+      board: boardRefSchema,
+      name: z.string(),
+    },
+    async ({ board, name }) => {
+      const { boardId } = resolveBoardInput(policy, board);
+      ensureBoardAllowed(policy, boardId);
+      return {
+        content: [{ type: "text", text: formatResult(await trello.addList(boardId, name)) }],
+      };
+    },
+  );
 
+  server.tool(
+    "trello_add_checklist",
+    "Add a checklist to a card.",
+    { cardId: z.string(), name: z.string() },
+    async ({ cardId, name }) => ({
+      content: [{ type: "text", text: formatResult(await trello.addChecklist(cardId, name)) }],
+    }),
+  );
 
+  server.tool(
+    "trello_add_checklist_item",
+    "Add an item to a checklist.",
+    {
+      cardId: z.string(),
+      checklistId: z.string(),
+      text: z.string(),
+    },
+    async ({ cardId, checklistId, text }) => ({
+      content: [
+        {
+          type: "text",
+          text: formatResult(await trello.addChecklistItem(cardId, checklistId, text)),
+        },
+      ],
+    }),
+  );
 
+  server.tool(
+    "trello_update_checklist_item",
+    "Update a checklist item (text or completion state).",
+    {
+      cardId: z.string(),
+      checkItemId: z.string(),
+      text: z.string().optional(),
+      complete: z.boolean().optional(),
+    },
+    async ({ cardId, checkItemId, text, complete }) => ({
+      content: [
+        {
+          type: "text",
+          text: formatResult(
+            await trello.updateChecklistItem(cardId, checkItemId, {
+              name: text,
+              state: complete === undefined ? undefined : complete ? "complete" : "incomplete",
+            }),
+          ),
+        },
+      ],
+    }),
+  );
 
+  server.tool(
+    "trello_delete_checklist_item",
+    "Delete a checklist item.",
+    { cardId: z.string(), checkItemId: z.string() },
+    async ({ cardId, checkItemId }) => {
+      await trello.deleteChecklistItem(cardId, checkItemId);
+      return {
+        content: [{ type: "text", text: formatResult({ deleted: true, cardId, checkItemId }) }],
+      };
+    },
+  );
 
+  server.tool(
+    "trello_add_comment",
+    "Add a comment to a card.",
+    { cardId: z.string(), text: z.string() },
+    async ({ cardId, text }) => ({
+      content: [{ type: "text", text: formatResult(await trello.addComment(cardId, text)) }],
+    }),
+  );
 
+  server.tool(
+    "trello_get_card_comments",
+    "Get comments on a card without fetching full card data.",
+    {
+      cardId: z.string(),
+      limit: z.number().int().min(1).max(100).optional(),
+    },
+    async ({ cardId, limit }) => ({
+      content: [{ type: "text", text: formatResult(await trello.getCardComments(cardId, limit)) }],
+    }),
+  );
 
+  server.tool(
+    "trello_update_comment",
+    "Update an existing comment.",
+    { commentId: z.string(), text: z.string() },
+    async ({ commentId, text }) => ({
+      content: [{ type: "text", text: formatResult(await trello.updateComment(commentId, text)) }],
+    }),
+  );
 
+  server.tool(
+    "trello_delete_comment",
+    "Delete a comment.",
+    { commentId: z.string() },
+    async ({ commentId }) => {
+      await trello.deleteComment(commentId);
+      return {
+        content: [{ type: "text", text: formatResult({ deleted: true, commentId }) }],
+      };
+    },
+  );
 
   server.tool(
     "trello_search",

@@ -6,6 +6,7 @@ import {
   type AccessPolicy,
 } from "./access.js";
 import type { AppContext } from "./bootstrap.js";
+import { boardsToMarkdown, cardToMarkdown } from "./formatters.js";
 import { TrelloApiError, type TrelloClient } from "./trello-client.js";
 
 function formatResult(data: unknown): string {
@@ -116,9 +117,99 @@ export function registerTools(server: McpServer, app: AppContext): void {
   server.tool(
     "trello_project_overview",
     "Dashboard view of all boards configured for this project, including lists and card titles.",
-    {},
-    async () => {
+    {
+      format: z.enum(["json", "markdown"]).optional().describe("Output format (default: json)"),
+    },
+    async ({ format }) => {
       const overview = await getProjectOverview(trello, policy);
+      if (format === "markdown") {
+        const markdown = [
+          `# ${String(overview.project ?? "Project")} Trello overview`,
+          "",
+          ...overview.boards.flatMap((board) => {
+            const header = `## ${String(board.name)}${board.alias ? ` (${board.alias})` : ""}`;
+            const listLines = board.lists.flatMap((list) => [
+              `### ${String(list.name)}`,
+              ...list.cards.map((card) => `- ${String(card.name)}`),
+              "",
+            ]);
+            return [header, "", ...listLines];
+          }),
+        ].join("\n");
+        return { content: [{ type: "text", text: markdown }] };
+      }
+      return { content: [{ type: "text", text: formatResult(overview) }] };
+    },
+  );
+
+  server.tool(
+    "trello_get_me",
+    "Verify your Trello connection and return the authenticated member profile.",
+    {},
+    async () => ({
+      content: [{ type: "text", text: formatResult(await trello.getMe()) }],
+    }),
+  );
+
+  server.tool(
+    "trello_list_boards",
+    "List boards for the current context. With project config, returns only boards selected for this project.",
+    {
+      allBoards: z.boolean().optional().describe("List every open board on your account"),
+      format: z.enum(["json", "markdown"]).optional(),
+    },
+    async ({ allBoards, format }) => {
+      const boards = await trello.listBoards();
+      const result = allBoards ? boards : enrichBoards(boards, policy);
+      const text =
+        format === "markdown" ? boardsToMarkdown(result) : formatResult(result);
+      return { content: [{ type: "text", text }] };
+    },
+  );
+
+  server.tool(
+    "trello_get_my_cards",
+    "List cards assigned to you. Optionally scoped to project boards.",
+    {
+      projectOnly: z.boolean().optional().describe("When true, only return cards on project boards"),
+    },
+    async ({ projectOnly }) => {
+      const cards = await trello.getMyCards();
+      const filtered =
+        projectOnly && policy.allowedBoardIds?.length
+          ? cards.filter((card) => policy.allowedBoardIds?.includes(String(card.idBoard)))
+          : cards;
+      return { content: [{ type: "text", text: formatResult(filtered) }] };
+    },
+  );
+
+  server.tool(
+    "trello_get_board",
+    "Get a board with open lists and cards. Uses project default board when board is omitted.",
+    {
+      board: boardRefSchema,
+      format: z.enum(["json", "markdown"]).optional(),
+    },
+    async ({ board, format }) => {
+      const { boardId, usedDefault } = resolveBoardInput(policy, board);
+      ensureBoardAllowed(policy, boardId);
+      const data = await trello.getBoard(boardId);
+      const payload = { usedDefaultBoard: usedDefault, boardId, ...data };
+      if (format === "markdown") {
+        const lists = Array.isArray(data.lists) ? data.lists : [];
+        const lines = [`# ${String(data.name ?? "Board")}`, ""];
+        for (const list of lists) {
+          lines.push(`## ${String((list as Record<string, unknown>).name ?? "List")}`);
+          const cards = Array.isArray((list as Record<string, unknown>).cards)
+            ? ((list as Record<string, unknown>).cards as Record<string, unknown>[])
+            : [];
+          for (const card of cards) {
+            lines.push(`- ${String(card.name)}`);
+          }
+          lines.push("");
+        }
+        return { content: [{ type: "text", text: lines.join("\n").trim() }] };
+      }
       return { content: [{ type: "text", text: formatResult(payload) }] };
     },
   );
@@ -178,13 +269,15 @@ export function registerTools(server: McpServer, app: AppContext): void {
     "Get full card details including comments, checklists, members, and attachments.",
     {
       cardId: z.string().describe("Trello card ID"),
+      format: z.enum(["json", "markdown"]).optional(),
     },
-    async ({ cardId }) => {
+    async ({ cardId, format }) => {
       const card = await trello.getCard(cardId);
       if (policy.allowedBoardIds?.length && !policy.allowedBoardIds.includes(String(card.idBoard))) {
         throw new TrelloApiError("Card is outside the boards allowed for this project.", 403);
       }
-      return { content: [{ type: "text", text: formatResult(card) }] };
+      const text = format === "markdown" ? cardToMarkdown(card) : formatResult(card);
+      return { content: [{ type: "text", text }] };
     },
   );
 

@@ -39,7 +39,7 @@
   },
   "homepage": "https://github.com/asim-altayb/trello-mcp#readme",
   "engines": {
-    "node": ">=20"
+    "node": ">=22"
   },
   "files": [
     "dist",

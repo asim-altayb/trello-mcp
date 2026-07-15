@@ -14,6 +14,7 @@
     "start": "node dist/index.js",
     "dev": "tsx src/index.ts",
     "setup": "bash scripts/setup.sh",
+    "setup:env": "node scripts/write-env.mjs",
     "init-project": "node dist/cli.js init",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -48,6 +49,9 @@
     "mcp-config.example.json",
     "server.json",
     "README.md",
+    "AGENTS.md",
+    "docs/agent-setup/prompt.md",
+    "scripts/write-env.mjs",
     "LICENSE"
   ],
   "dependencies": {

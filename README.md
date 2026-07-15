@@ -8,6 +8,18 @@ A [Model Context Protocol](https://modelcontextprotocol.io) server for Trello �
 
 Works with [Cursor](https://cursor.com), [Claude Desktop](https://claude.ai), VS Code Copilot, and any MCP-compatible client.
 
+## Quick setup for AI agents
+
+Paste this **one line** into Cursor, Claude Code, Codex, Grok, or any agent that can fetch URLs:
+
+```
+Fetch https://raw.githubusercontent.com/asim-altayb/trello-mcp/main/docs/agent-setup/prompt.md and follow every step to install trello-mcp and wire it to this project.
+```
+
+The agent will detect your OS (Linux, macOS, or Windows), clone the server, configure credentials, write `.trello-mcp.json`, and register MCP — without you running terminal commands.
+
+See [AGENTS.md](AGENTS.md) and [docs/agent-setup/prompt.md](docs/agent-setup/prompt.md) for details.
+
 ## Why use this?
 
 Most Trello MCP integrations focus on hosted OAuth or a single global board. This server is built for developers who juggle multiple codebases and want:
@@ -144,10 +156,17 @@ Board tools accept optional `board` (ID, alias, or name). When omitted, the proj
 
 ## Multi-project setup
 
+One shared server install; each repo gets its own `.trello-mcp.json`:
+
+| OS | Shared server + `.env` |
+|---|---|
+| Linux / macOS | `~/.local/share/trello-mcp/` |
+| Windows | `%LOCALAPPDATA%\trello-mcp\` |
+
 ```
-~/trello-mcp/               → .env (credentials, once)
-~/project-a/             → .trello-mcp.json (boards 1, 2)
-~/project-b/             → .trello-mcp.json (boards 3, 4)
+SERVER_DIR/                → .env (credentials, once)
+~/project-a/               → .trello-mcp.json (boards 1, 2)
+~/project-b/               → .trello-mcp.json (boards 3, 4)
 ```
 
 Point each project's MCP config `cwd` at that project. The server picks up the right boards automatically.

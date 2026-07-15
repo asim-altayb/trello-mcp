@@ -1,20 +1,55 @@
 {
   "name": "trello-mcp",
-  "version": "0.8.0",
+  "version": "1.0.0",
   "description": "MCP server for Trello with per-project board profiles",
   "type": "module",
   "main": "dist/index.js",
+  "mcpName": "io.github.asim-altayb/trello-mcp",
+  "bin": {
+    "trello-mcp": "dist/index.js",
+    "trello-mcp-init": "dist/cli.js"
+  },
   "scripts": {
     "build": "tsc",
     "start": "node dist/index.js",
     "dev": "tsx src/index.ts",
     "setup": "bash scripts/setup.sh",
-    "init-project": "node dist/cli.js init"
+    "init-project": "node dist/cli.js init",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "prepublishOnly": "npm run build && npm test"
   },
+  "keywords": [
+    "mcp",
+    "trello",
+    "model-context-protocol",
+    "cursor",
+    "claude",
+    "ai-agents",
+    "kanban",
+    "typescript"
+  ],
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/asim-altayb/trello-mcp.git"
+  },
+  "bugs": {
+    "url": "https://github.com/asim-altayb/trello-mcp/issues"
+  },
+  "homepage": "https://github.com/asim-altayb/trello-mcp#readme",
   "engines": {
     "node": ">=20"
   },
+  "files": [
+    "dist",
+    "scripts",
+    ".trello-mcp.example.json",
+    "mcp-config.example.json",
+    "server.json",
+    "README.md",
+    "LICENSE"
+  ],
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.25.2",
     "dotenv": "^17.4.2",
@@ -23,10 +58,7 @@
   "devDependencies": {
     "@types/node": "^24.3.0",
     "tsx": "^4.20.5",
-    "typescript": "^5.9.2"
-  },
-  "bin": {
-    "trello-mcp": "dist/index.js",
-    "trello-mcp-init": "dist/cli.js"
+    "typescript": "^5.9.2",
+    "vitest": "^3.2.4"
   }
 }

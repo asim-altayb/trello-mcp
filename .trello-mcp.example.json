@@ -1,0 +1,16 @@
+{
+  "name": "my-project",
+  "boards": [
+    {
+      "id": "paste_board_id_here",
+      "name": "Sprint Board",
+      "alias": "sprint",
+      "default": true
+    },
+    {
+      "id": "paste_second_board_id_here",
+      "name": "Backlog",
+      "alias": "backlog"
+    }
+  ]
+}
